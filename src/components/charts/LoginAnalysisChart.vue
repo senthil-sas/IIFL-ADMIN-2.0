@@ -4,10 +4,12 @@ import { useRouter } from 'vue-router'
 import Icon from '../Icon.vue'
 import { useStore } from '../../store'
 import { loginSeries, SESSION, NOW } from '../../data/loginData'
+import { useLoginDetails } from '../../composables/useLoginDetails'
 
 const router = useRouter()
 const store = useStore()
 const accent = computed(() => store.state.tweaks.accent || '#1B5BD9')
+const { androidCount, iosCount, mobileCount, webCount, apiCount } = useLoginDetails()
 
 const svgRef = ref<SVGSVGElement | null>(null)
 const hover = ref<{ idx: number } | null>(null)
@@ -49,12 +51,24 @@ const bars = minuteTrades
     return { x: xs(b.i) - barW / 2, y: barBot - h, h }
   })
 
-// Donut
-const dist = computed(() => [
-  { lbl: 'Mobile', n: Math.round(totalToday * 0.58), c: '#1B5BD9' },
-  { lbl: 'Web', n: Math.round(totalToday * 0.30), c: '#5B8DEF' },
-  { lbl: 'APIs', n: Math.round(totalToday * 0.12), c: '#A6B6D4' },
-])
+// Donut — real device breakdown from API (falls back to proportions of chart data when API not yet loaded)
+const dist = computed(() => {
+  const hasReal = mobileCount.value + webCount.value + apiCount.value > 0
+  if (hasReal) {
+    return [
+      { lbl: 'Android', n: androidCount.value, c: '#1B5BD9' },
+      { lbl: 'iOS', n: iosCount.value, c: '#7C3AED' },
+      { lbl: 'Web', n: webCount.value, c: '#5B8DEF' },
+      { lbl: 'APIs', n: apiCount.value, c: '#A6B6D4' },
+    ]
+  }
+  return [
+    { lbl: 'Android', n: Math.round(totalToday * 0.42), c: '#1B5BD9' },
+    { lbl: 'iOS', n: Math.round(totalToday * 0.16), c: '#7C3AED' },
+    { lbl: 'Web', n: Math.round(totalToday * 0.30), c: '#5B8DEF' },
+    { lbl: 'APIs', n: Math.round(totalToday * 0.12), c: '#A6B6D4' },
+  ]
+})
 const donutSum = computed(() => dist.value.reduce((a, b) => a + b.n, 0))
 const C = 2 * Math.PI * 22
 const donutSegs = computed(() => {

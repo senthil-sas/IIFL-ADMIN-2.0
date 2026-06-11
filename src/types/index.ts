@@ -40,3 +40,22 @@ export interface TweaksState {
   windowMin: number
   showRolling: boolean
 }
+
+export interface AuthUser {
+  ucc: string
+  name: string
+  givenName: string
+  familyName: string
+  email: string
+  roles: string[]
+  sub: string
+  exp: number
+}
+
+export interface AuthState {
+  token: string | null
+  user: AuthUser | null
+  loading: boolean
+  error: string | null
+  sessionExpired: boolean
+}

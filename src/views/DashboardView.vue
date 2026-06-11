@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import KpiStrip from '../components/KpiStrip.vue'
 import CodifiFoot from '../components/CodifiFoot.vue'
 import LoginAnalysisChart from '../components/charts/LoginAnalysisChart.vue'
 import LoginAnalyticsExtra from '../components/charts/LoginAnalyticsExtra.vue'
 import SystemStatus from '../components/charts/SystemStatus.vue'
 import ActivityFeed from '../components/charts/ActivityFeed.vue'
+import { useLoginDetails } from '../composables/useLoginDetails'
 
 const tab = ref<'login' | 'health' | 'actions'>('login')
+const { load } = useLoginDetails()
+onMounted(load)
 </script>
 
 <template>

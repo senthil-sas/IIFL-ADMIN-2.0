@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import Sidebar from './components/layout/Sidebar.vue'
 import Topbar from './components/layout/Topbar.vue'
 
@@ -14,6 +15,8 @@ function readCollapsed(): boolean {
 }
 
 const collapsed = ref<boolean>(readCollapsed())
+const route = useRoute()
+const isAuthRoute = computed(() => route.name === 'login')
 
 watch(collapsed, (v) => {
   try {
@@ -25,7 +28,11 @@ watch(collapsed, (v) => {
 </script>
 
 <template>
-  <div class="app" :class="{ 'sidebar-collapsed': collapsed }">
+  <!-- Auth pages: full-screen, no chrome -->
+  <router-view v-if="isAuthRoute" />
+
+  <!-- App shell -->
+  <div v-else class="app" :class="{ 'sidebar-collapsed': collapsed }">
     <Sidebar :collapsed="collapsed" @toggle="collapsed = !collapsed" />
     <div class="main">
       <Topbar />

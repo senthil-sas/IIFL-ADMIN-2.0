@@ -7,8 +7,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
       { id: 'clients', label: 'Client Management', icon: 'users', count: '14.2k' },
       { id: 'portfolio', label: 'Portfolio & Watchlist', icon: 'portfolio' },
-      { id: 'funds', label: 'Funds & Payments', icon: 'funds', count: '23' },
-      { id: 'sip', label: 'SIP Management', icon: 'sip' },
+      // { id: 'funds', label: 'Funds & Payments', icon: 'funds', count: '23' },
+      // { id: 'sip', label: 'SIP Management', icon: 'sip' },
       { id: 'reports', label: 'Reports', icon: 'file' },
     ],
   },
@@ -16,14 +16,14 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Operations',
     items: [
       { id: 'operations', label: 'Operations', icon: 'operations' },
-      { id: 'communications', label: 'Communications', icon: 'chat' },
-      { id: 'infra', label: 'Infrastructure', icon: 'server' },
+      // { id: 'communications', label: 'Communications', icon: 'chat' },
+      // { id: 'infra', label: 'Infrastructure', icon: 'server' },
     ],
   },
-  {
-    label: 'Admin',
-    items: [{ id: 'settings', label: 'Settings', icon: 'settings' }],
-  },
+  // {
+  //   label: 'Admin',
+  //   items: [{ id: 'settings', label: 'Settings', icon: 'settings' }],
+  // },
 ]
 
 export const PAGE_TITLES: Record<ViewId, PageMeta> = {

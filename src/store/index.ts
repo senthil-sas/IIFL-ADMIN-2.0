@@ -1,9 +1,11 @@
 import { createStore, Store, useStore as baseUseStore } from 'vuex'
 import type { InjectionKey } from 'vue'
-import type { TweaksState } from '../types'
+import type { TweaksState, AuthState } from '../types'
+import { authModule } from './auth'
 
 export interface RootState {
   tweaks: TweaksState
+  auth: AuthState
 }
 
 export const key: InjectionKey<Store<RootState>> = Symbol('store')
@@ -30,10 +32,10 @@ export const store = createStore<RootState>({
         },
       },
     },
+    auth: authModule,
   },
 })
 
-// Typed convenience hook — components call useStore() with no args.
 export function useStore(): Store<RootState> {
   return baseUseStore(key)
 }
