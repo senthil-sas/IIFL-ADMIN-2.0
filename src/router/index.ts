@@ -19,6 +19,13 @@ const routes: RouteRecordRaw[] = [
   { path: '/communications', name: 'communications', component: () => import('../views/CommsView.vue') },
   { path: '/infra', name: 'infra', component: () => import('../views/InfraView.vue') },
   { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue') },
+  { path: '/logs', name: 'logs', component: () => import('../views/logs.vue') },
+  {
+    path: '/userjourney',
+    name: 'journey-analyzer',
+    component: () => import('../views/userJourney/index.vue'),
+    meta: { public: false, standalone: true },
+  },
 ]
 
 const router = createRouter({

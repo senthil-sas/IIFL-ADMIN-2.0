@@ -491,11 +491,24 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   max-width: 1480px;
   width: 100%;
 }
+
+/* Standalone full-height pages (e.g. Journey Analyzer) */
+.main--fill {
+  height: 100vh;
+  overflow: hidden;
+}
+.page-fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
 .page-header {
   display: flex;
   align-items: flex-end;
   gap: 16px;
-  margin-bottom: 22px;
+  /* margin-bottom: 22px; */
   flex-wrap: wrap;
 }
 .page-header h1 {

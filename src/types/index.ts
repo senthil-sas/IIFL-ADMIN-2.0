@@ -10,12 +10,16 @@ export type ViewId =
   | 'communications'
   | 'infra'
   | 'settings'
+  | 'journey-analyzer'
+  | 'logs'
 
 export interface NavItem {
   id: ViewId
   label: string
   icon: string
   count?: string
+  newTab?: boolean
+  externalPath?: string
 }
 
 export interface NavGroup {

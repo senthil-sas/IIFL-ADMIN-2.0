@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import Icon from '../Icon.vue'
 import { NAV_GROUPS } from '../../data/nav'
 import { useStore } from '../../store'
-import type { ViewId } from '../../types'
 
 defineProps<{ collapsed: boolean }>()
 defineEmits<{ (e: 'toggle'): void }>()
@@ -13,7 +12,15 @@ const route = useRoute()
 const router = useRouter()
 const store = useStore()
 
-const go = (id: ViewId) => router.push({ name: id })
+import type { NavItem } from '../../types'
+
+function go(item: NavItem) {
+  if (item.newTab) {
+    window.open(item.externalPath ?? `/${item.id}`, '_blank')
+  } else {
+    router.push({ name: item.id })
+  }
+}
 
 const user = computed(() => store.getters['auth/user'])
 const initials = computed(() => store.getters['auth/initials'])
@@ -66,7 +73,7 @@ function logout() {
         :key="it.id"
         class="nav-item"
         :class="{ active: route.name === it.id }"
-        @click="go(it.id)"
+        @click="go(it)"
         :data-label="it.label"
         :title="collapsed ? it.label : undefined"
       >

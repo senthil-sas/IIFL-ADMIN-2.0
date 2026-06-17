@@ -2,10 +2,16 @@ import { createStore, Store, useStore as baseUseStore } from 'vuex'
 import type { InjectionKey } from 'vue'
 import type { TweaksState, AuthState } from '../types'
 import { authModule } from './auth'
+import { accessLogModule } from './accesslog'
+import { tabsModule } from './tabs'
+import type { AccessLogState } from './accesslog'
+import type { TabsState } from './tabs'
 
 export interface RootState {
   tweaks: TweaksState
   auth: AuthState
+  accessLog: AccessLogState
+  tabs: TabsState
 }
 
 export const key: InjectionKey<Store<RootState>> = Symbol('store')
@@ -33,6 +39,8 @@ export const store = createStore<RootState>({
       },
     },
     auth: authModule,
+    accessLog: accessLogModule,
+    tabs: tabsModule,
   },
 })
 

@@ -16,8 +16,15 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Operations',
     items: [
       { id: 'operations', label: 'Operations', icon: 'operations' },
+      { id: 'logs', label: 'Logs', icon: 'file' },
       // { id: 'communications', label: 'Communications', icon: 'chat' },
       // { id: 'infra', label: 'Infrastructure', icon: 'server' },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { id: 'journey-analyzer', label: 'Journey Analyzer', icon: 'file' },
     ],
   },
   // {
@@ -68,5 +75,13 @@ export const PAGE_TITLES: Record<ViewId, PageMeta> = {
   settings: {
     title: 'Settings',
     subtitle: 'Workspace branding, admins, roles and integrations.',
+  },
+  'journey-analyzer': {
+    title: 'Journey Analyzer',
+    subtitle: 'Trace user session events end-to-end.',
+  },
+  logs: {
+    title: 'Logs',
+    subtitle: 'Access logs and Clickhouse query logs.',
   },
 }

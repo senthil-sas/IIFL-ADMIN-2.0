@@ -16,7 +16,8 @@ function readCollapsed(): boolean {
 
 const collapsed = ref<boolean>(readCollapsed())
 const route = useRoute()
-const isAuthRoute = computed(() => route.name === 'login')
+const isAuthRoute  = computed(() => route.name === 'login')
+const isStandalone = computed(() => !!route.meta?.standalone)
 
 watch(collapsed, (v) => {
   try {
@@ -34,9 +35,13 @@ watch(collapsed, (v) => {
   <!-- App shell -->
   <div v-else class="app" :class="{ 'sidebar-collapsed': collapsed }">
     <Sidebar :collapsed="collapsed" @toggle="collapsed = !collapsed" />
-    <div class="main">
+    <div class="main" :class="{ 'main--fill': isStandalone }">
       <Topbar />
-      <div class="page">
+      <!-- Standalone pages (e.g. Journey Analyzer) fill the remaining height without padding -->
+      <div v-if="isStandalone" class="page-fill">
+        <router-view />
+      </div>
+      <div v-else class="page">
         <router-view />
       </div>
     </div>
