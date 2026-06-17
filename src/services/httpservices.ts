@@ -1,7 +1,6 @@
 import { authFetch } from './api'
 
 const BASE_URL = import.meta.env.VITE_BASEURL as string
-const IS_LIVE = import.meta.env.VITE_ENV === 'live'
 
 class HttpService {
   async get(endpoint: string) {
@@ -28,6 +27,11 @@ class HttpService {
   postClickhouseAccessLogV2Details(payload: unknown) {
     const prefix = 'adminrest';
     return this.post(`${prefix}/log/filter/access/v1/details`, payload)
+  }
+
+  contractDetails() {
+    const prefix = 'adminrest'
+    return this.get(`${prefix}/contract/details`)
   }
 }
 

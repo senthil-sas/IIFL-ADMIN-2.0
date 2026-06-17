@@ -4,14 +4,17 @@ import type { TweaksState, AuthState } from '../types'
 import { authModule } from './auth'
 import { accessLogModule } from './accesslog'
 import { tabsModule } from './tabs'
+import { contractsModule } from './contracts'
 import type { AccessLogState } from './accesslog'
 import type { TabsState } from './tabs'
+import type { ContractsState } from './contracts'
 
 export interface RootState {
   tweaks: TweaksState
   auth: AuthState
   accessLog: AccessLogState
   tabs: TabsState
+  contracts: ContractsState
 }
 
 export const key: InjectionKey<Store<RootState>> = Symbol('store')
@@ -41,6 +44,7 @@ export const store = createStore<RootState>({
     auth: authModule,
     accessLog: accessLogModule,
     tabs: tabsModule,
+    contracts: contractsModule,
   },
 })
 
