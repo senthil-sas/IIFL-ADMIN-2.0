@@ -359,7 +359,9 @@ const resetChip = (reset: Partial<Filters>) => { advFilters.value = { ...advFilt
         </thead>
         <tbody v-if="holdingsLoading">
           <tr v-for="n in holdingsPageSize" :key="n">
-            <td colspan="8" style="padding:6px 12px"><div class="skel-cell" style="width:100%" /></td>
+            <td colspan="8">
+              <div class="skel-line" style="height:14px;width:100%;border-radius:4px" />
+            </td>
           </tr>
         </tbody>
         <tbody v-else>
@@ -544,11 +546,9 @@ const resetChip = (reset: Partial<Filters>) => { advFilters.value = { ...advFilt
 
 <style scoped>
 @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
-.skel-cell {
-  display: block;
-  height: 13px;
+.skel-line {
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--line-2) 25%, var(--surface-2, #efefef) 50%, var(--line-2) 75%);
+  background: linear-gradient(90deg, var(--line-2) 25%, var(--surface-2, #f0f0f0) 50%, var(--line-2) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }

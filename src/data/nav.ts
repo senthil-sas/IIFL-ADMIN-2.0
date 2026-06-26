@@ -24,7 +24,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Tools',
     items: [
-      { id: 'journey-analyzer', label: 'Journey Analyzer', icon: 'file' },
+      { id: 'journey-analyzer', label: 'User Journey', icon: 'activity' },
     ],
   },
   // {
@@ -77,8 +77,8 @@ export const PAGE_TITLES: Record<ViewId, PageMeta> = {
     subtitle: 'Workspace branding, admins, roles and integrations.',
   },
   'journey-analyzer': {
-    title: 'Journey Analyzer',
-    subtitle: 'Trace user session events end-to-end.',
+    title: 'User Journey',
+    subtitle: 'Trace a user\'s complete API session flow end-to-end.',
   },
   logs: {
     title: 'Logs',
