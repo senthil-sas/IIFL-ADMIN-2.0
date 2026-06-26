@@ -33,6 +33,36 @@ class HttpService {
     const prefix = 'adminrest'
     return this.get(`${prefix}/contract/details`)
   }
+
+  getStatusCount() {
+    const prefix = 'adminrest'
+    return this.get(`${prefix}/log/status/count`)
+  }
+
+  getUserDetails(payload: { pageNo: number; pageSize: number }) {
+    const prefix = 'adminrest'
+    return this.post(`${prefix}/log/user/details`, payload)
+  }
+
+  getHoldings(payload: { pageNo: number; pageSize: number }) {
+    const prefix = 'adminrest'
+    return this.post(`${prefix}/log/holding`, payload)
+  }
+
+  getHoldingDetails(payload: { userId: string }) {
+    const prefix = 'adminrest'
+    return this.post(`${prefix}/log/holding/details`, payload)
+  }
+
+  getLoginChart(date?: string) {
+    const prefix = 'adminrest'
+    const today = new Date()
+    const dd = String(today.getDate()).padStart(2, '0')
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const yyyy = today.getFullYear()
+    const payload = { date: date ?? `${dd}${mm}${yyyy}` }
+    return this.post(`${prefix}/log/login/chart`, payload)
+  }
 }
 
 export const httpService = new HttpService()

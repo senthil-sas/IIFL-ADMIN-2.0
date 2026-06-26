@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import Icon from '../components/Icon.vue'
 import CodifiFoot from '../components/CodifiFoot.vue'
 import RangeSlider from '../components/RangeSlider.vue'
 import HoldingsDetailDrawer from '../components/drawers/HoldingsDetailDrawer.vue'
+import HoldingApiDetailDrawer, { type HoldingUser as HoldingApiUser } from '../components/drawers/HoldingApiDetailDrawer.vue'
 import UploadDataModal from '../components/drawers/UploadDataModal.vue'
 import { avatarColor, initials } from '../data/avatar'
 import { HOLDINGS, POSITIONS, WATCH, PRODUCT_BADGE, holdingsByClient, type Position, type ClientHolding } from '../data/portfolio'
+import { httpService } from '../services/httpservices'
 
 type Tab = 'holdings' | 'positions' | 'watch'
 interface Filters { symbol: string; poa: string; minCurrent: string; maxCurrent: string; minPnl: string; maxPnl: string; minStocks: string }
@@ -15,6 +17,7 @@ const EMPTY: Filters = { symbol: '', poa: 'any', minCurrent: '', maxCurrent: '',
 const tab = ref<Tab>('holdings')
 const query = ref('')
 const openHoldingId = ref<string | null>(null)
+const openHoldingUser = ref<HoldingApiUser | null>(null)
 const openPosClient = ref<any | null>(null)
 const uploadOpen = ref<'holdings' | 'positions' | null>(null)
 const watchType = ref('dynamic')
@@ -26,6 +29,65 @@ watch(advOpen, (v) => { if (v) draftFilters.value = { ...advFilters.value } })
 
 const today = 'Fri, 8 May 2026 · 09:15 AM'
 const HOLDINGS_BY_CLIENT = holdingsByClient()
+
+// ── Holdings API ──────────────────────────────────────────────────────────────
+interface HoldingUser {
+  userId: string
+  uniqueStocks: number
+  totalStocks: number
+  invested: number
+  currentValue: number
+  pnl: number
+  pnlPercentage: number
+  edis: string
+}
+
+const HOLDING_PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
+const holdingsLoading = ref(true)
+const holdingsData = ref<HoldingUser[]>([])
+const holdingsPage = ref(1)
+const holdingsTotalPages = ref(1)
+const holdingsTotalRecords = ref(0)
+const holdingsPageSize = ref(10)
+
+async function fetchHoldings(page: number) {
+  holdingsLoading.value = true
+  try {
+    const res = await httpService.getHoldings({ pageNo: page, pageSize: holdingsPageSize.value })
+    const result = res.data?.result?.[0]
+    if (result) {
+      holdingsData.value = result.users ?? []
+      holdingsTotalPages.value = result.totalPages
+      holdingsTotalRecords.value = result.totalRecords
+      holdingsPage.value = result.currentPage
+    }
+  } finally {
+    holdingsLoading.value = false
+  }
+}
+
+onMounted(() => fetchHoldings(1))
+watch(tab, (val) => { if (val === 'holdings') fetchHoldings(1) })
+
+// Pagination helpers
+const holdingsPageWindow = computed<(number | '…')[]>(() => {
+  const total = holdingsTotalPages.value
+  const cur = holdingsPage.value
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages: (number | '…')[] = [1]
+  if (cur > 3) pages.push('…')
+  for (let p = Math.max(2, cur - 1); p <= Math.min(total - 1, cur + 1); p++) pages.push(p)
+  if (cur < total - 2) pages.push('…')
+  pages.push(total)
+  return pages
+})
+function goToHoldingsPage(p: number | '…') {
+  if (typeof p !== 'number' || p === holdingsPage.value || p < 1 || p > holdingsTotalPages.value) return
+  fetchHoldings(p)
+}
+function onHoldingsPageSizeChange() { fetchHoldings(1) }
+const holdingsRangeStart = computed(() => (holdingsPage.value - 1) * holdingsPageSize.value + 1)
+const holdingsRangeEnd = computed(() => Math.min(holdingsPage.value * holdingsPageSize.value, holdingsTotalRecords.value))
 
 const longPos = POSITIONS.filter((p) => p.side === 'LONG').length
 const shortPos = POSITIONS.filter((p) => p.side === 'SHORT').length
@@ -67,21 +129,11 @@ const activeChips = computed(() => {
   return chips
 })
 
-const fHold = computed(() =>
-  HOLDINGS_BY_CLIENT.filter((h) => {
-    const f = advFilters.value
-    if (query.value && ![h.client, h.cid].some((s) => s.toLowerCase().includes(query.value.toLowerCase()))) return false
-    if (f.symbol && !h.symbols.some((s) => s.toLowerCase().includes(f.symbol.toLowerCase()))) return false
-    if (f.poa === 'yes' && !h.poa) return false
-    if (f.poa === 'no' && h.poa) return false
-    if (f.minCurrent && h.current < parseFloat(f.minCurrent)) return false
-    if (f.maxCurrent && h.current > parseFloat(f.maxCurrent)) return false
-    if (f.minPnl && h.pnl < parseFloat(f.minPnl)) return false
-    if (f.maxPnl && h.pnl > parseFloat(f.maxPnl)) return false
-    if (f.minStocks && h.uniqueStocks < parseInt(f.minStocks, 10)) return false
-    return true
-  })
-)
+const fHold = computed(() => {
+  if (!query.value) return holdingsData.value
+  const q = query.value.toLowerCase()
+  return holdingsData.value.filter((h) => h.userId.toLowerCase().includes(q))
+})
 const fPos = computed(() => POSITIONS.filter((p) => !query.value || [p.client, p.cid, p.symbol].some((s) => s.toLowerCase().includes(query.value.toLowerCase()))))
 const fWat = computed(() => WATCH.filter((w) => w.type === watchType.value && (!query.value || [w.name, w.owner, ...w.top].some((s) => s.toLowerCase().includes(query.value.toLowerCase())))))
 
@@ -102,10 +154,10 @@ const posByClient = computed(() => {
 const stats = computed(() => {
   if (tab.value === 'holdings')
     return [
-      { label: 'AUM', value: '₹284.62 Cr', sub: 'as per BOD', tally: false, valueSuffix: '' },
-      { label: 'Clients with holdings', value: '12,418', sub: '83.7% of active base', tally: false, valueSuffix: '' },
-      { label: 'Unique holding count', value: '1,842', sub: 'across NSE · BSE', tally: false, valueSuffix: '' },
-      { label: 'Tally', value: '9', valueSuffix: 'matched', sub: 'File · DB · Segment · Backend', tally: true },
+      { label: 'AUM', value: '₹0 Cr', sub: 'as per BOD', tally: false, valueSuffix: '' },
+      { label: 'Clients with holdings', value: holdingsTotalRecords.value ? holdingsTotalRecords.value.toLocaleString('en-IN') : '—', sub: '83.7% of active base', tally: false, valueSuffix: '' },
+      { label: 'Unique holding count', value: '0', sub: 'across NSE · BSE', tally: false, valueSuffix: '' },
+      { label: 'Tally', value: '0', valueSuffix: '', sub: 'File · DB · Segment · Backend', tally: false },
     ]
   if (tab.value === 'positions')
     return [
@@ -295,8 +347,7 @@ const resetChip = (reset: Partial<Filters>) => { advFilters.value = { ...advFilt
       <table class="data">
         <thead>
           <tr>
-            <th style="width:36px"><input type="checkbox" class="cm-check" /></th>
-            <th>UCC</th><th>Name</th>
+            <th>UCC</th>
             <th class="num" style="text-align:right">Unique stocks</th>
             <th class="num" style="text-align:right">Total stocks</th>
             <th class="num" style="text-align:right">Invested</th>
@@ -306,40 +357,60 @@ const resetChip = (reset: Partial<Filters>) => { advFilters.value = { ...advFilt
             <th style="text-align:center">POA</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="(h, i) in fHold" :key="i" @click="openHoldingId = openHoldingId === h.cid ? null : h.cid" :style="{ cursor: 'pointer', background: openHoldingId === h.cid ? 'var(--primary-50)' : undefined }">
-            <td @click.stop><input type="checkbox" class="cm-check" /></td>
-            <td class="col-id">{{ h.cid }}</td>
-            <td>
-              <div class="user-cell">
-                <div class="av" :style="{ background: avatarColor(h.client), width: '24px', height: '24px', fontSize: '10px' }">{{ initials(h.client) }}</div>
-                <div class="uc-name" style="font-size:12.5px">{{ h.client }}</div>
-              </div>
-            </td>
+        <tbody v-if="holdingsLoading">
+          <tr v-for="n in holdingsPageSize" :key="n">
+            <td colspan="8" style="padding:6px 12px"><div class="skel-cell" style="width:100%" /></td>
+          </tr>
+        </tbody>
+        <tbody v-else>
+          <tr v-if="!fHold.length">
+            <td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">No records found</td>
+          </tr>
+          <tr
+            v-for="h in fHold"
+            :key="h.userId"
+            style="cursor:pointer"
+            :style="{ background: openHoldingUser?.userId === h.userId ? 'var(--primary-50)' : undefined }"
+            @click="openHoldingUser = openHoldingUser?.userId === h.userId ? null : h"
+          >
+            <td class="col-id">{{ h.userId }}</td>
             <td class="num" style="text-align:right">{{ h.uniqueStocks }}</td>
-            <td class="num" style="text-align:right">{{ h.totalQty.toLocaleString('en-IN') }}</td>
+            <td class="num" style="text-align:right">{{ h.totalStocks.toLocaleString('en-IN') }}</td>
             <td class="num" style="text-align:right;color:var(--muted)">₹{{ h.invested.toLocaleString('en-IN', { maximumFractionDigits: 0 }) }}</td>
-            <td class="num" style="text-align:right;font-weight:500">₹{{ h.current.toLocaleString('en-IN', { maximumFractionDigits: 0 }) }}</td>
-            <td class="num" :style="{ textAlign: 'right', fontWeight: 600, color: h.pnl >= 0 ? 'var(--emerald)' : 'var(--rose)' }">
-              {{ h.pnl >= 0 ? '+' : '−' }}₹{{ Math.abs(h.pnl).toLocaleString('en-IN') }}
+            <td class="num" style="text-align:right;font-weight:500">₹{{ h.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 }) }}</td>
+            <td class="num" :style="{ textAlign:'right', fontWeight:600, color: h.pnl >= 0 ? 'var(--emerald)' : 'var(--rose)' }">
+              {{ h.pnl >= 0 ? '+' : '−' }}₹{{ Math.abs(h.pnl).toLocaleString('en-IN', { maximumFractionDigits: 0 }) }}
             </td>
-            <td class="num" :style="{ textAlign: 'right', fontWeight: 500, color: (h.invested ? (h.pnl / h.invested) * 100 : 0) >= 0 ? 'var(--emerald)' : 'var(--rose)' }">
-              {{ (h.invested ? (h.pnl / h.invested) * 100 : 0) >= 0 ? '+' : '' }}{{ (h.invested ? (h.pnl / h.invested) * 100 : 0).toFixed(2) }}%
+            <td class="num" :style="{ textAlign:'right', fontWeight:500, color: h.pnlPercentage >= 0 ? 'var(--emerald)' : 'var(--rose)' }">
+              {{ h.pnlPercentage >= 0 ? '+' : '' }}{{ h.pnlPercentage.toFixed(2) }}%
             </td>
             <td style="text-align:center">
-              <span class="badge" :class="h.poa ? 'badge-success' : 'badge-danger'" style="min-width:36px;justify-content:center">{{ h.poa ? 'Yes' : 'No' }}</span>
+              <span class="badge" :class="h.edis === 'Yes' ? 'badge-success' : 'badge-danger'" style="min-width:36px;justify-content:center">{{ h.edis }}</span>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="pagination">
-      <span>Showing 1–{{ fHold.length }} of 12,418 clients</span>
-      <div class="pages"><button>‹</button><button class="active">1</button><button>2</button><button>3</button><button>…</button><button>›</button></div>
+      <span>Showing {{ holdingsRangeStart.toLocaleString('en-IN') }}–{{ holdingsRangeEnd.toLocaleString('en-IN') }} of {{ holdingsTotalRecords.toLocaleString('en-IN') }} clients</span>
+      <div class="page-size-select">
+        Rows per page:
+        <select v-model="holdingsPageSize" @change="onHoldingsPageSizeChange">
+          <option v-for="opt in HOLDING_PAGE_SIZE_OPTIONS" :key="opt" :value="opt">{{ opt }}</option>
+        </select>
+      </div>
+      <div class="pages">
+        <button :disabled="holdingsPage <= 1" @click="goToHoldingsPage(holdingsPage - 1)">‹</button>
+        <template v-for="p in holdingsPageWindow" :key="p">
+          <button v-if="p === '…'" disabled>…</button>
+          <button v-else :class="{ active: p === holdingsPage }" @click="goToHoldingsPage(p)">{{ p }}</button>
+        </template>
+        <button :disabled="holdingsPage >= holdingsTotalPages" @click="goToHoldingsPage(holdingsPage + 1)">›</button>
+      </div>
     </div>
   </div>
 
-  <HoldingsDetailDrawer v-if="tab === 'holdings' && openHolding" :row="openHolding" :raw-holdings="rawHoldingsFor(openHolding.cid)" @close="openHoldingId = null" />
+  <HoldingApiDetailDrawer v-if="tab === 'holdings' && openHoldingUser" :user="openHoldingUser" @close="openHoldingUser = null" />
 
   <!-- Positions -->
   <div v-if="tab === 'positions'" class="card" style="margin-bottom:18px">
@@ -470,3 +541,33 @@ const resetChip = (reset: Partial<Filters>) => { advFilters.value = { ...advFilt
   <UploadDataModal v-if="uploadOpen" :kind="uploadOpen" @close="uploadOpen = null" />
   <CodifiFoot />
 </template>
+
+<style scoped>
+@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+.skel-cell {
+  display: block;
+  height: 13px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--line-2) 25%, var(--surface-2, #efefef) 50%, var(--line-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+.page-size-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.page-size-select select {
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.pages button:disabled { opacity: 0.35; cursor: default; }
+</style>

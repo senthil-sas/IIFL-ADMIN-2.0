@@ -57,6 +57,11 @@ export function useLoginDetails() {
     return fetchedAt.value.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
   })
 
+  function reload(): Promise<void> {
+    inflightPromise = null
+    return load()
+  }
+
   return {
     data: readonly(data),
     loading: readonly(loading),
@@ -69,5 +74,6 @@ export function useLoginDetails() {
     totalCount,
     fetchedAtLabel,
     load,
+    reload,
   }
 }
